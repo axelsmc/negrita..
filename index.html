@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEGRITA LINDA </title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1a0826 0%, #05020a 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #lienzo-flor {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #capa-informacion {
+            position: absolute;
+            top: 25px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            pointer-events: none;
+            letter-spacing: 1.5px;
+            font-weight: 300;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="capa-informacion">Haz clic o toca la pantalla para activar la música</div>
+    <canvas id="lienzo-flor"></canvas>
+
+    <!-- Audio -->
+    <audio id="musica-fondo" loop src="cancion.mp3" preload="auto"></audio>
+
+    <script>
+        // --- 1. CONTROL DE AUDIO ---
+        const audio = document.getElementById('musica-fondo');
+        const capaTexto = document.getElementById('capa-informacion');
+
+        function iniciarAudio() {
+            audio.play().then(() => {
+                capaTexto.style.opacity = '0';
+                capaTexto.style.transition = 'opacity 1s ease';
+            }).catch(error => {
+                console.log("Esperando interacción para reproducir audio.");
+            });
+            window.removeEventListener('click', iniciarAudio);
+            window.removeEventListener('touchstart', iniciarAudio);
+        }
+
+        window.addEventListener('click', iniciarAudio);
+        window.addEventListener('touchstart', iniciarAudio);
+
+        // --- 2. CONFIGURACIÓN DEL LIENZO (CANVAS 2D) ---
+        const lienzo = document.getElementById('lienzo-flor');
+        const contexto = lienzo.getContext('2d');
+
+        function ajustarTamanoLienzo() {
+            lienzo.width = window.innerWidth;
+            lienzo.height = window.innerHeight;
+        }
+        ajustarTamanoLienzo();
+        window.addEventListener('resize', ajustarTamanoLienzo);
+
+        // --- 3. GENERACIÓN DE DESTELLOS FLOTANTES (PARTÍCULAS) ---
+        const cantidadParticulas = 80;
+        const particulas = [];
+
+        for (let i = 0; i < cantidadParticulas; i++) {
+            particulas.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                radio: Math.random() * 2 + 1,
+                velocidadY: Math.random() * 0.5 + 0.2,
+                opacidad: Math.random() * 0.5 + 0.3,
+                desfasaje: Math.random() * Math.PI * 2
+            });
+        }
+
+        // --- 4. FUNCIONES DE DIBUJO ---
+
+        // Dibujar un pétalo suave estilizado usando curvas Bézier
+        function dibujarPetalo(ctx, ancho, alto, colorInicial, colorFinal) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+
+            // Curva izquierda
+            ctx.bezierCurveTo(-ancho * 0.8, -alto * 0.3, -ancho, -alto * 0.8, 0, -alto);
+            // Curva derecha
+            ctx.bezierCurveTo(ancho, -alto * 0.8, ancho * 0.8, -alto * 0.3, 0, 0);
+
+            const degradado = ctx.createLinearGradient(0, 0, 0, -alto);
+            degradado.addColorStop(0, colorInicial);
+            degradado.addColorStop(1, colorFinal);
+
+            ctx.fillStyle = degradado;
+            ctx.shadowColor = 'rgba(255, 0, 85, 0.4)';
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Dibujar hoja del tallo
+        function dibujarHoja(ctx, x, y, escala, angulo, esIzquierda) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angulo);
+            ctx.scale(escala, escala);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(esIzquierda ? -30 : 30, -20, esIzquierda ? -50 : 50, -50, esIzquierda ? -70 : 70, -30);
+            ctx.bezierCurveTo(esIzquierda ? -40 : 40, 10, esIzquierda ? -20 : 20, 15, 0, 0);
+
+            const degradadoHoja = ctx.createLinearGradient(0, 0, esIzquierda ? -70 : 70, -30);
+            degradadoHoja.addColorStop(0, '#1b4317');
+            degradadoHoja.addColorStop(1, '#3a7032');
+
+            ctx.fillStyle = degradadoHoja;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Dibujar el tallo orgánico curvo
+        function dibujarTallo(ctx, xFlor, yFlor, tiempo) {
+            const balanceoTallo = Math.sin(tiempo * 0.8) * 8;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(xFlor, yFlor);
+
+            // Curva suave hacia abajo
+            const xBase = xFlor + balanceoTallo * 0.5;
+            const yBase = yFlor + 320;
+
+            ctx.quadraticCurveTo(xFlor + 20 + balanceoTallo, yFlor + 160, xBase, yBase);
+
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = '#2d5a27';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Dibujar hojas en puntos específicos del tallo
+            dibujarHoja(ctx, xFlor + 10 + balanceoTallo * 0.7, yFlor + 90, 0.9, -0.2, true);
+            dibujarHoja(ctx, xFlor + 12 + balanceoTallo * 0.4, yFlor + 180, 0.85, 0.2, false);
+
+            ctx.restore();
+        }
+
+        // Dibujar la rosa completa por capas de pétalos
+        function dibujarFlor(ctx, x, y, tiempo) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Leve balanceo y respiración de la flor
+            const anguloBalanceo = Math.sin(tiempo * 0.8) * 0.05;
+            const escalaRespiracion = 1 + Math.sin(tiempo * 1.2) * 0.02;
+
+            ctx.rotate(anguloBalanceo);
+            ctx.scale(escalaRespiracion, escalaRespiracion);
+
+            // Capas de pétalos (desde las exteriores más grandes a las interiores)
+            const capasPetalos = [
+                { cantidad: 7, ancho: 45, alto: 95, radio: 30, colorInicio: '#800f2f', colorFin: '#c9184a' },
+                { cantidad: 6, ancho: 40, alto: 80, radio: 22, colorInicio: '#a4133c', colorFin: '#ff4d6d' },
+                { cantidad: 5, ancho: 32, alto: 65, radio: 14, colorInicio: '#c9184a', colorFin: '#ff0054' },
+                { cantidad: 4, ancho: 25, alto: 50, radio: 8, colorInicio: '#ff0054', colorFin: '#ff70a6' },
+                { cantidad: 3, ancho: 18, alto: 35, radio: 3, colorInicio: '#ff5400', colorFin: '#ffbd00' }
+            ];
+
+            capasPetalos.forEach((capa, indiceCapa) => {
+                const anguloPaso = (Math.PI * 2) / capa.cantidad;
+                const rotacionBase = indiceCapa * 0.5;
+
+                for (let i = 0; i < capa.cantidad; i++) {
+                    const angulo = i * anguloPaso + rotacionBase;
+
+                    ctx.save();
+                    ctx.rotate(angulo);
+                    ctx.translate(0, -capa.radio);
+
+                    dibujarPetalo(ctx, capa.ancho, capa.alto, capa.colorInicio, capa.colorFin);
+                    ctx.restore();
+                }
+            });
+
+            // Centro amarillo brillante
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffb703';
+            ctx.shadowColor = '#ffb703';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- 5. BUCLE PRINCIPAL DE ANIMACIÓN ---
+        let tiempoInicio = Date.now();
+
+        function animar() {
+            const tiempoActual = (Date.now() - tiempoInicio) * 0.001;
+
+            // Limpiar lienzo con fondo transparente
+            contexto.clearRect(0, 0, lienzo.width, lienzo.height);
+
+            // 1. Dibujar partículas flotantes (destellos)
+            particulas.forEach(p => {
+                p.y -= p.velocidadY;
+                p.x += Math.sin(tiempoActual + p.desfasaje) * 0.3;
+
+                // Reiniciar partícula cuando sale de la pantalla
+                if (p.y < -10) {
+                    p.y = lienzo.height + 10;
+                    p.x = Math.random() * lienzo.width;
+                }
+
+                contexto.save();
+                contexto.beginPath();
+                contexto.arc(p.x, p.y, p.radio, 0, Math.PI * 2);
+                contexto.fillStyle = `rgba(255, 194, 209, ${p.opacidad})`;
+                contexto.shadowColor = '#ffc2d1';
+                contexto.shadowBlur = 8;
+                contexto.fill();
+                contexto.restore();
+            });
+
+            // Coordenadas del centro de la flor
+            const centroX = lienzo.width / 2;
+            const centroY = lienzo.height / 2 - 40 + Math.sin(tiempoActual) * 8;
+
+            // 2. Dibujar tallo primero (queda detrás de la flor)
+            dibujarTallo(contexto, centroX, centroY, tiempoActual);
+
+            // 3. Dibujar la flor
+            dibujarFlor(contexto, centroX, centroY, tiempoActual);
+
+            requestAnimationFrame(animar);
+        }
+
+        // como le adoro a esa muchacha...
+        animar();
+    </script>
+</body>
+
+</html>
