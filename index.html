@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NEGRITA LINDA </title>
+    <title>NEGRITA LINDA</title>
     <style>
         body {
             margin: 0;
@@ -40,29 +40,28 @@
     <div id="capa-informacion">Haz clic o toca la pantalla para activar la música</div>
     <canvas id="lienzo-flor"></canvas>
 
-    <!-- Audio -->
     <audio id="musica-fondo" loop src="cancion.mp3" preload="auto"></audio>
 
     <script>
-        // --- 1. CONTROL DE AUDIO ---
         const audio = document.getElementById('musica-fondo');
         const capaTexto = document.getElementById('capa-informacion');
 
-        function iniciarAudio() {
+        function activarMusicaMovil() {
+            audio.load();
             audio.play().then(() => {
                 capaTexto.style.opacity = '0';
                 capaTexto.style.transition = 'opacity 1s ease';
             }).catch(error => {
-                console.log("Esperando interacción para reproducir audio.");
+                capaTexto.innerText = "Toca de nuevo para la música";
             });
-            window.removeEventListener('click', iniciarAudio);
-            window.removeEventListener('touchstart', iniciarAudio);
+
+            window.removeEventListener('click', activarMusicaMovil);
+            window.removeEventListener('touchend', activarMusicaMovil);
         }
 
-        window.addEventListener('click', iniciarAudio);
-        window.addEventListener('touchstart', iniciarAudio);
+        window.addEventListener('click', activarMusicaMovil);
+        window.addEventListener('touchend', activarMusicaMovil);
 
-        // --- 2. CONFIGURACIÓN DEL LIENZO (CANVAS 2D) ---
         const lienzo = document.getElementById('lienzo-flor');
         const contexto = lienzo.getContext('2d');
 
@@ -73,7 +72,6 @@
         ajustarTamanoLienzo();
         window.addEventListener('resize', ajustarTamanoLienzo);
 
-        // --- 3. GENERACIÓN DE DESTELLOS FLOTANTES (PARTÍCULAS) ---
         const cantidadParticulas = 80;
         const particulas = [];
 
@@ -88,17 +86,11 @@
             });
         }
 
-        // --- 4. FUNCIONES DE DIBUJO ---
-
-        // Dibujar un pétalo suave estilizado usando curvas Bézier
         function dibujarPetalo(ctx, ancho, alto, colorInicial, colorFinal) {
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(0, 0);
-
-            // Curva izquierda
             ctx.bezierCurveTo(-ancho * 0.8, -alto * 0.3, -ancho, -alto * 0.8, 0, -alto);
-            // Curva derecha
             ctx.bezierCurveTo(ancho, -alto * 0.8, ancho * 0.8, -alto * 0.3, 0, 0);
 
             const degradado = ctx.createLinearGradient(0, 0, 0, -alto);
@@ -112,7 +104,6 @@
             ctx.restore();
         }
 
-        // Dibujar hoja del tallo
         function dibujarHoja(ctx, x, y, escala, angulo, esIzquierda) {
             ctx.save();
             ctx.translate(x, y);
@@ -133,7 +124,6 @@
             ctx.restore();
         }
 
-        // Dibujar el tallo orgánico curvo
         function dibujarTallo(ctx, xFlor, yFlor, tiempo) {
             const balanceoTallo = Math.sin(tiempo * 0.8) * 8;
 
@@ -141,7 +131,6 @@
             ctx.beginPath();
             ctx.moveTo(xFlor, yFlor);
 
-            // Curva suave hacia abajo
             const xBase = xFlor + balanceoTallo * 0.5;
             const yBase = yFlor + 320;
 
@@ -152,26 +141,22 @@
             ctx.lineCap = 'round';
             ctx.stroke();
 
-            // Dibujar hojas en puntos específicos del tallo
             dibujarHoja(ctx, xFlor + 10 + balanceoTallo * 0.7, yFlor + 90, 0.9, -0.2, true);
             dibujarHoja(ctx, xFlor + 12 + balanceoTallo * 0.4, yFlor + 180, 0.85, 0.2, false);
 
             ctx.restore();
         }
 
-        // Dibujar la rosa completa por capas de pétalos
         function dibujarFlor(ctx, x, y, tiempo) {
             ctx.save();
             ctx.translate(x, y);
 
-            // Leve balanceo y respiración de la flor
             const anguloBalanceo = Math.sin(tiempo * 0.8) * 0.05;
             const escalaRespiracion = 1 + Math.sin(tiempo * 1.2) * 0.02;
 
             ctx.rotate(anguloBalanceo);
             ctx.scale(escalaRespiracion, escalaRespiracion);
 
-            // Capas de pétalos (desde las exteriores más grandes a las interiores)
             const capasPetalos = [
                 { cantidad: 7, ancho: 45, alto: 95, radio: 30, colorInicio: '#800f2f', colorFin: '#c9184a' },
                 { cantidad: 6, ancho: 40, alto: 80, radio: 22, colorInicio: '#a4133c', colorFin: '#ff4d6d' },
@@ -196,7 +181,6 @@
                 }
             });
 
-            // Centro amarillo brillante
             ctx.beginPath();
             ctx.arc(0, 0, 10, 0, Math.PI * 2);
             ctx.fillStyle = '#ffb703';
@@ -207,21 +191,17 @@
             ctx.restore();
         }
 
-        // --- 5. BUCLE PRINCIPAL DE ANIMACIÓN ---
         let tiempoInicio = Date.now();
 
         function animar() {
             const tiempoActual = (Date.now() - tiempoInicio) * 0.001;
 
-            // Limpiar lienzo con fondo transparente
             contexto.clearRect(0, 0, lienzo.width, lienzo.height);
 
-            // 1. Dibujar partículas flotantes (destellos)
             particulas.forEach(p => {
                 p.y -= p.velocidadY;
                 p.x += Math.sin(tiempoActual + p.desfasaje) * 0.3;
 
-                // Reiniciar partícula cuando sale de la pantalla
                 if (p.y < -10) {
                     p.y = lienzo.height + 10;
                     p.x = Math.random() * lienzo.width;
@@ -237,20 +217,15 @@
                 contexto.restore();
             });
 
-            // Coordenadas del centro de la flor
             const centroX = lienzo.width / 2;
             const centroY = lienzo.height / 2 - 40 + Math.sin(tiempoActual) * 8;
 
-            // 2. Dibujar tallo primero (queda detrás de la flor)
             dibujarTallo(contexto, centroX, centroY, tiempoActual);
-
-            // 3. Dibujar la flor
             dibujarFlor(contexto, centroX, centroY, tiempoActual);
 
             requestAnimationFrame(animar);
         }
 
-        // como le adoro a esa muchacha...
         animar();
     </script>
 </body>
